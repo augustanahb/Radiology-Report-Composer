@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cranial CT Report Maker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#eef2f4;--sf:#fff;--ink:#14232b;--mut:#5b6b73;--ln:#cfd8dc;--ac:#0d6e6e;--acs:#dff1f1;--on:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a1f;--sf:#172429;--ink:#e4eef1;--mut:#9bb0b8;--ln:#2c3d44;--ac:#4fc3c3;--acs:#1c3b3d;--on:#0f1a1f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a1f;--sf:#172429;--ink:#e4eef1;--mut:#9bb0b8;--ln:#2c3d44;--ac:#4fc3c3;--acs:#1c3b3d;--on:#0f1a1f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:20px 24px 4px;max-width:1560px;margin:0 auto}
+h1{font-size:22px;margin:0;font-weight:600}
+header p{margin:2px 0 0;color:var(--mut)}
+main{display:grid;grid-template-columns:272px minmax(0,1fr) minmax(0,1fr);gap:20px;max-width:1560px;margin:0 auto;padding:16px 24px 32px;align-items:start}
+@media (max-width:900px){.side{position:static}.tpls{flex-direction:row;flex-wrap:wrap}main{grid-template-columns:1fr;padding:12px 14px 28px}header{padding:16px 14px 0}}
+fieldset{background:var(--sf);border:1px solid var(--ln);border-radius:8px;margin:0 0 12px;padding:12px 16px 14px;min-width:0}
+legend{font-weight:600;padding:0 6px}
+label{display:block;margin:5px 0}
+label.in{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:6px 0}
+input[type=text],input[type=number],select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--ln);border-radius:6px;padding:6px 8px;min-width:0}
+input[type=text]{flex:1 1 160px}
+input[type=number]{width:84px}
+input:required:invalid{border-color:#c0392b}
+.rg{display:inline-flex;gap:14px;flex-wrap:wrap}
+.rg label{margin:0;display:inline-flex;align-items:center}
+input[type=date]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--ln);border-radius:6px;padding:6px 8px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+input[type=checkbox],input[type=radio]{accent-color:var(--ac);margin-right:7px}
+.sub{margin:6px 0 4px 22px;padding-left:12px;border-left:3px solid var(--acs)}
+.vol{display:flex;align-items:baseline;gap:12px;background:var(--acs);border-radius:8px;padding:10px 14px;margin:8px 0 2px}
+.vol b{font-size:30px;line-height:1;color:var(--ac);font-weight:600}
+.vol span{color:var(--mut);font-size:13px}
+.out{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){.out{position:static}}
+textarea{width:100%;height:min(66vh,620px);line-height:1.55;resize:vertical;background:var(--sf)}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+button{font:inherit;font-weight:500;border:1px solid var(--ac);background:var(--ac);color:var(--on);border-radius:6px;padding:7px 16px;cursor:pointer}
+button.ghost{background:transparent;color:var(--ac)}
+.note{color:var(--mut);font-size:13px}
+.tpls{display:flex;flex-direction:column;gap:8px}
+.tpls button{text-align:left;white-space:nowrap}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.side section{background:var(--sf);border:1px solid var(--ln);border-radius:8px;margin:0 0 12px;padding:12px 14px 14px}
+.side h2{font-size:15px;font-weight:600;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.side section:not(:first-child) h2{margin:0}
+.wip{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--mut);border:1px solid var(--ln);border-radius:999px;padding:1px 8px}
+.tpls button[aria-pressed="false"]{background:transparent;color:var(--ac)}
+</style>
+</head>
+<body>
+<header>
+<h1>Cranial CT Report Composer</h1>
+</header>
+<main>
+<aside class="side" aria-label="Modality and template">
+<section><h2>CT</h2><div class="tpls" id="tpls" role="group" aria-label="CT report template"></div></section>
+<section><h2>US <span class="wip">WIP</span></h2></section>
+<section><h2>MRI <span class="wip">WIP</span></h2></section>
+</aside>
+<form id="f" onsubmit="return false">
+
+<select id="tpl" hidden><option value="std">CT Cranial - Standard</option><option value="jnos">CT Cranial - JNO</option><option value="mrqc">CT Cranial - MRQC</option><option value="jno">CT Cranial (Young) - JNO</option></select>
+
+<fieldset><legend>Study</legend>
+<label class="in">Clinical data (required) <input type="text" id="clin" required placeholder="Enter clinical data"></label>
+<div class="row" id="techrow">
+<label><input type="radio" name="tech" value="Non-enhanced cranial CT scan" checked><span id="tn">Non-enhanced</span></label>
+<label><input type="radio" name="tech" value="Contrast-enhanced cranial CT scan">Contrast-enhanced</label>
+</div>
+<label class="in">Comparison <select id="comp"><option>None</option><option>Non-enhanced cranial CT scan</option><option>Contrast-enhanced cranial CT scan</option><option>Cranial CT angiogram</option></select></label>
+<div id="compx" class="sub" hidden><label class="in">Date <input type="date" id="compd"></label></div>
+</fieldset>
+
+<fieldset id="ifcf"><legend>Infarct</legend>
+<label><input type="checkbox" id="ifc">Present</label>
+<div id="ifcx" class="sub" hidden>
+<div class="row">Age <select id="ifa"><option>Acute</option><option>Subacute</option><option>Chronic</option></select></div>
+<label class="in">Location <input type="text" id="ifl" placeholder="e.g. right MCA territory"></label>
+<label><input type="checkbox" id="ifg">Loss of grey-to-white matter differentiation</label>
+<label id="evl" hidden><input type="checkbox" id="evc">Ex vacuo dilatation</label>
+<div id="evx" class="sub" hidden><label class="in">Dilatation of the <input type="text" id="evt" placeholder="e.g. right lateral ventricle"></label></div>
+</div>
+</fieldset>
+
+<fieldset id="hemf"><legend>Hemorrhage</legend>
+<label><input type="checkbox" id="hem">Present</label>
+<div id="hemx" class="sub" hidden>
+<label class="in">Location <input type="text" id="loc" placeholder="e.g. right basal ganglia"></label>
+<div class="row">Size (cm)
+<input type="number" id="ap" step="0.1" min="0" placeholder="AP">
+×<input type="number" id="tr" step="0.1" min="0" placeholder="T">
+×<input type="number" id="cc" step="0.1" min="0" placeholder="CC">
+</div>
+<div class="vol"><b id="vol">—</b><span>cc &nbsp;(A × B × C × 0.524)</span></div>
+<label class="in">Age
+<select id="age"><option>Acute</option><option>Subacute</option><option>Chronic</option></select></label>
+<label><input type="checkbox" id="edema" checked>Perilesional hypodensity (vasogenic edema)</label>
+<label><input type="checkbox" id="ivh">Intraventricular extension</label>
+<div id="ivhx" class="sub" hidden>
+<div class="row">Lateral ventricle
+<label style="margin:0"><input type="checkbox" id="iv_l">Left</label>
+<label style="margin:0"><input type="checkbox" id="iv_r">Right</label>
+<label style="margin:0"><input type="checkbox" id="iv_b">Bilateral</label></div>
+<div class="row"><label style="margin:0"><input type="checkbox" id="iv_3">Third ventricle</label>
+<label style="margin:0"><input type="checkbox" id="iv_4">Fourth ventricle</label></div>
+<label class="in">Resultant ventricular dilatation
+<select id="hydro"><option value="">none</option><option>mild</option><option>moderate</option><option>marked</option></select></label>
+</div>
+<div class="note">Mass effect</div>
+<label><input type="checkbox" id="eff">Effacement of adjacent cortical sulci</label>
+<label><input type="checkbox" id="comp2">Compression of
+<select id="csev"><option>mild</option><option>moderate</option><option>marked</option></select>
+<input type="text" id="cstr" placeholder="e.g. right lateral ventricle" style="flex:1 1 140px"></label>
+<label><input type="checkbox" id="shc">Midline shift</label>
+<div id="shx" class="sub" hidden><div class="row">
+<span class="rg" id="shdir"><label><input type="radio" name="shdir" value="Rightward" checked>Rightward</label><label><input type="radio" name="shdir" value="Leftward">Leftward</label></span>
+<input type="number" id="shcm" step="0.1" min="0" placeholder="cm">
+</div>
+</div>
+<label><input type="checkbox" id="uncc">Uncal herniation</label>
+<div id="uncx" class="sub" hidden>
+<span class="rg" id="unc"><label><input type="radio" name="unc" value="right" checked>Right</label><label><input type="radio" name="unc" value="left">Left</label></span></div>
+</div>
+</fieldset>
+
+<fieldset id="enhf" hidden><legend>Enhancement</legend>
+<label><input type="checkbox" id="enh" checked>No undue leptomeningeal or parenchymal enhancement</label>
+</fieldset>
+
+<fieldset id="lacf"><legend>Old lacunar infarcts</legend>
+<div class="row">Old lacunar infarcts
+<select id="inf"><option value="">none</option><option value="1">single</option><option>Few</option><option>Several</option><option>Multiple</option></select>
+<input type="text" id="infloc" placeholder="location"></div>
+</fieldset>
+
+<fieldset id="wmf"><legend>Chronic microvascular white matter ischemic changes</legend>
+<div class="row" id="wmstd">Severity
+<select id="wm"><option value="">none</option><option>Mild</option><option>Moderate</option><option>Severe</option></select></div>
+<label id="wmmq" hidden><input type="checkbox" id="wmc">Present</label>
+</fieldset>
+
+<fieldset><legend>Normal structures</legend>
+<label><input type="checkbox" id="mid" checked>Midline structures in place</label>
+<label><input type="checkbox" id="stem" checked>Brainstem and cerebellum unremarkable</label>
+<div id="stemx" class="sub" hidden>
+<label><input type="checkbox" id="brs">Brainstem intact</label>
+<label><input type="checkbox" id="cbl">Cerebellum intact</label>
+</div>
+<div id="ventw"><div class="note" style="margin-top:8px">Sulci, ventricles and cisterns</div>
+<label><input type="radio" name="vent" value="n" checked>Unremarkable</label>
+<label><input type="radio" name="vent" value="a">Mildly prominent (cerebral)</label>
+<label><input type="radio" name="vent" value="b">Mildly prominent (cerebral and cerebellar)</label></div>
+<div id="sellaw"><div class="note" style="margin-top:8px">Sella</div>
+<label><input type="radio" name="sel" value="unremarkable" checked>Unremarkable</label>
+<label><input type="radio" name="sel" value="partially empty">Partially empty</label></div>
+</fieldset>
+
+<fieldset><legend>Atherosclerosis</legend>
+<label><input type="checkbox" id="cal">Atherosclerotic vessel disease</label>
+<div id="calx" class="sub" hidden>
+<div class="row">Severity <select id="calsev"><option>Mild</option><option>Moderate</option><option>Extensive</option></select></div>
+<div class="row"><label style="margin:0;min-width:170px"><input type="checkbox" id="cic" checked>Internal carotid arteries</label>
+<select id="cics"><option>bilateral</option><option>left</option><option>right</option></select></div>
+<div class="row"><label style="margin:0;min-width:170px"><input type="checkbox" id="cva" checked>Vertebral arteries</label>
+<select id="cvas"><option>bilateral</option><option>left</option><option>right</option></select></div>
+</div>
+</fieldset>
+
+<fieldset><legend>Sinuses, petromastoids, orbits and bones</legend>
+<label><input type="checkbox" id="sin" checked>Unremarkable</label>
+<div id="abn" class="sub" hidden>
+<label><input type="checkbox" id="sit">Sinusitis</label>
+
+
+<div id="sitx" class="sub" hidden></div>
+<label><input type="checkbox" id="mas">Mastoiditis</label>
+<div id="mastx" class="sub" hidden>
+<div class="row">Type <select id="mta"><option>Acute</option><option>Chronic</option></select>
+Side <span class="rg" id="mts"></span></div>
+</div>
+<label><input type="checkbox" id="lens">Aphakia / pseudophakia</label>
+<div id="lensx" class="sub" hidden>
+<div class="row">
+Side <span class="rg" id="lts"></span></div>
+</div>
+</div>
+</fieldset>
+</form>
+
+<section class="out">
+<div class="bar">
+<button type="button" id="copy">Copy report</button>
+<button type="button" id="reset" class="ghost">Clear form</button>
+<label style="margin:0"><input type="checkbox" id="lock">Edit text freely</label>
+</div>
+<textarea id="rep" spellcheck="true" aria-label="Report"></textarea>
+<p class="note" id="msg">© 2026 Augustana</p>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const v=id=>{const e=$(id);if(e.classList.contains('rg')){const r=e.querySelector('input:checked');return r?r.value:''}return e.value.trim()};
+const c=id=>$(id).checked;
+const num=id=>parseFloat($(id).value);
+const B='___';
+const radios=id=>['bilateral','left','right'].map(x=>`<label><input type="radio" name="${id}" value="${x}"${x==='bilateral'?' checked':''}>${x[0].toUpperCase()+x.slice(1)}</label>`).join('');
+['mts','lts'].forEach(id=>{$(id).innerHTML=radios(id)});
+const SIN=['frontal','ethmoid','maxillary','sphenoid'];
+const ivl=()=>{const l=c('iv_l'),r=c('iv_r'),a=[];if(l&&r)a.push('bilateral lateral ventricles');else if(l)a.push('left lateral ventricle');else if(r)a.push('right lateral ventricle');if(c('iv_3'))a.push('third ventricle');if(c('iv_4'))a.push('fourth ventricle');return a.length?join(a):'____'};
+const ss=s=>{const l=c('s_'+s+'_l'),r=c('s_'+s+'_r');return l&&r?'bilateral':l?'left':r?'right':''};
+let midWas=true;
+$('sitx').innerHTML=SIN.map(s=>`<div class="row"><span style="min-width:110px">${s[0].toUpperCase()+s.slice(1)}</span><label style="margin:0"><input type="checkbox" id="s_${s}_l">Left</label><label style="margin:0"><input type="checkbox" id="s_${s}_r">Right</label><label style="margin:0"><input type="checkbox" id="s_${s}_b">Bilateral</label></div>`).join('');
+const join=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+function toHtml(t){const e=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return e.split('\n').map(l=>'<span style="font-family:Arial,sans-serif;font-size:12pt;background-color:transparent">'+l.replace(/^(CT SCAN OF THE BRAIN \((?:NON-CONTRAST|CONTRAST-ENHANCED)\)|Clinical data:|Technique:|Comparison:|IMPRESSION:)/,'<b>$1</b>')+'</span>').join('<br>')}
+function comp(){const k=v('comp');if(k==='None')return k;const d=$('compd').value,M=['January','February','March','April','May','June','July','August','September','October','November','December'],p=d?d.split('-'):null;return k+' dated '+(p?`${M[+p[1]-1]} ${+p[2]}, ${p[0]}`:'____')}
+function volume(){const a=num('ap'),b=num('tr'),d=num('cc');return(a>0&&b>0&&d>0)?a*b*d*0.524:null}
+function doInf(P,I){if(c('ifc')){const ag=v('ifa'),lc=v('ifl')||'____',df={Acute:'Ill-defined',Subacute:'Fairly-defined',Chronic:'Well-defined'}[ag];
+    const ev=ag==='Chronic'&&c('evc');
+    P.push(`${df} hypodense changes are seen in the ${lc}`+(ev?` with associated ex vacuo dilatation of the ${v('evt')||'____'}`:c('ifg')?' with associated loss of grey-to-white matter differentiation':'')+'.');
+    I.push(`${ag} infarct in the ${lc}.`);}}
+function doHem(P,I,vol){
+  const hem=c('hem');
+  if(hem){
+    const loc=v('loc')||'____';
+    let s=`A hyperdense collection is seen in the ${loc} measuring ${$('ap').value||B} x ${$('tr').value||B} x ${$('cc').value||B} cm (APxTxCC), amounting to approximately ${vol===null?B:vol.toFixed(1)} cc.`;
+    if(c('edema'))s+=' Minimal perilesional hypodensities are identified denoting vasogenic edema.';
+    if(c('ivh')){const h=v('hydro');s+=` Intraventricular extension into the ${ivl()} is seen`+(h?` with resultant ${h} dilatation of the ventricles.`:'.');}
+    const m=[];
+    if(c('eff'))m.push('the effacement of the adjacent cortical sulci');
+    if(c('comp2'))m.push(`${v('csev')} compression of the ${v('cstr')||'____'}`);
+    const dir=c('shc')?v('shdir'):'';
+    if(dir)m.push(`a ${dir.toLowerCase()} midline shift of ${v('shcm')||B} cm`);
+    if(m.length)s+=' Mass effects are noted as evidenced by '+join(m)+'.';
+    if(c('uncc'))s+=` Medial deviation of the ${v('unc')} uncus is observed.`;
+    P.push(s);
+    I.push(`${v('age')} parenchymal hemorrhage in the ${loc}`+(c('ivh')?', with intraventricular extension':'')+(m.length?' and mass effects':'')+', as detailed.');
+    const h=[];
+    if(dir)h.push(`${dir} subfalcine herniation`);
+    if(c('uncc'))h.push(`${v('unc')} uncal herniation`);
+    if(h.length)I.push(cap(join(h))+'.');
+  }
+}
+function stemT(u){if(c('stem'))return u;const b=c('brs'),e=c('cbl');return b&&e?'Brainstem and cerebellum are intact.':b?'Brainstem is intact.':e?'Cerebellum is intact.':''}
+function buildStd(){
+  const vol=volume(),P=[],I=[];
+  const tech=document.querySelector('input[name=tech]:checked').value;
+  const jj=$('tpl').value==='jnos';
+  if(jj)P.push(`CT SCAN OF THE BRAIN (${tech.startsWith('Contrast')?'CONTRAST-ENHANCED':'NON-CONTRAST'})\nClinical data: ${v('clin')||'____'}\nComparison: ${comp()}.`);
+  else P.push(`Clinical data: ${v('clin')||'____'}\nTechnique: ${tech}.\nComparison: ${comp()}`);
+  let nl='';{const nh=!c('hem'),ni=!c('ifc');let s;
+  if(nh&&ni)s='No evidence of acute intracranial hemorrhage. No acute major territorial infarction. No brain mass.';
+  else if(ni)s='No evidence of acute major territorial infarction. No brain mass.';
+  else if(nh)s='No evidence of acute intracranial hemorrhage. No brain mass.';
+  else s='';
+  if(nh&&ni){P.push(s);I.push('No acute intracranial hemorrhage. No acute major territorial infarction. No brain mass.'+(jj?'':' Suggest follow-up (CT/MRI) if clinically warranted.'))}else nl=s;}
+  doInf(P,I);
+  doHem(P,I,vol);
+  if(nl)P.push(nl);
+  if(tech.startsWith('Contrast')&&c('enh')){P.push('No undue leptomeningeal or parenchymal enhancement.');I.push('No undue leptomeningeal or parenchymal enhancement.')}
+  const inf=v('inf'),il=v('infloc')||'____';
+  if(inf==='1'){P.push(jj?`A small chronic infarct is seen in the ${il}.`:`A well-defined, CSF-attenuating hypodensity is seen in the ${il}.`);I.push(`Old lacunar infarct in the ${il}.`)}
+  else if(inf){P.push(jj?`${inf} small chronic infarcts are seen in the ${il}.`:`${inf} well-defined, CSF-attenuating hypodensities are seen in the ${il}.`);I.push(`Old lacunar infarcts in the ${il}.`)}
+  const wm=v('wm');
+  if(wm){P.push(`${wm} patchy hypodense changes are seen in the bilateral frontoparietal white matter.`);I.push(`${wm} microvascular white matter ischemic changes.`)}
+  const mid=[];
+  if(c('mid'))mid.push('Midline structures are in place.');
+  {const t=stemT('Brainstem and cerebellum appears unremarkable.');if(t)mid.push(t)}
+  if(mid.length)P.push(mid.join(' '));
+  const vt=document.querySelector('input[name=vent]:checked').value;
+  if(vt==='n')P.push('Cerebral cortical sulci, fissures, cisterns, and ventricular system are unremarkable.');
+  if(vt==='a'){P.push('Cerebral cortical sulci, ventricles, and cisterns are mildly prominent.');I.push('Age-related mild cerebral volume loss.')}
+  if(vt==='b'){P.push('Cerebral cortical sulci, cerebellar fissures, ventricles, and cisterns are mildly prominent.');I.push('Age-related mild cerebrocerebellar volume loss.')}
+  const sel=document.querySelector('input[name=sel]:checked').value;
+  P.push(`Sella is ${sel}. Cerebellopontine angles are unremarkable.`);
+  const part=(s,n)=>s==='bilateral'?`bilateral ${n} arteries`:`${s} ${n} artery`;
+  let cal='',calt='';
+  if(c('cal')){const a=c('cic')?v('cics'):'',b=c('cva')?v('cvas'):'';
+    if(a&&b)calt=a===b?`${a} internal carotid and vertebral arteries`:`${part(a,'internal carotid')} and ${part(b,'vertebral')}`;
+    else if(a)calt=part(a,'internal carotid');else if(b)calt=part(b,'vertebral');
+    if(calt)cal=v('calsev');}
+  if(cal){P.push(`${cal} wall calcifications are seen in the ${calt}.`);I.push(`${cal==='Extensive'?'Severe':cal} atherosclerotic vessel disease.`)}
+  const sl=SIN.filter(s=>ss(s)).map(s=>`${ss(s)} ${s}`);
+  const nor=c('sin'),sit=!nor&&c('sit'),mas=!nor&&c('mas'),len=!nor&&c('lens'),sinN=!sit,pmN=!mas,sltxt=sl.length?join(sl):'____';
+  const muc=`Fluid/soft tissue densities are seen in the ${sltxt} ${sl.length===1&&!sl[0].startsWith('bilateral')?'sinus':'sinuses'}.`;
+  const S=[];
+  const nsel=SIN.filter(s=>ss(s)),allSin=nsel.length===4&&nsel.every(s=>ss(s)==='bilateral'),ms2=v('mts');
+  if(sit)S.push(muc);
+  if(mas)S.push(v('mta')==='Acute'?`Fluid/soft tissue densities are seen in the ${ms2} mastoid air cells.`:`The ${ms2} mastoid air cells are partly sclerotic.`);
+  const hasS=!allSin,hasP=!(mas&&ms2==='bilateral'),parts=[];
+  if(hasS)parts.push(sit?'rest of the imaged paranasal sinuses':'imaged paranasal sinuses');
+  if(hasP)parts.push(mas?(ms2==='left'?'right':'left')+' petromastoids':(hasS?'petromastoids':'imaged petromastoids'));
+  if(parts.length)S.push('The '+parts.join(' and ')+' are clear and well-aerated.');
+  
+  if(len){const ls=v('lts');S.push(ls==='bilateral'?'There is thinning of the bilateral lenses.':`There is thinning of the ${ls} lens.`)}else S.push('Orbits and intra-orbital structures appear normal.');
+  S.push('Imaged osseous structures are intact.');
+  if(S.length)P.push(S.join(' '));
+  
+  if(sit){const it=SIN.filter(s=>ss(s)).map(s=>({s,d:ss(s)}));
+    if(it.length>2)I.push('Polysinus disease.');
+    else if(it.length===2&&it[0].d===it[1].d)I.push(`${cap(it[0].d)} ${it[0].s} and ${it[1].s} sinus disease.`);
+    else I.push(cap(it.length?it.map(x=>`${x.d} ${x.s}`).join(' and '):'____')+' sinus disease.');}
+  if(mas){const ms=v('mts'),ma=v('mta').toLowerCase();I.push(ms==='bilateral'?`Bilateral ${ma} mastoid disease.`:`${cap(ma)} ${ms} mastoid disease.`)}
+  if(len){const ls=v('lts');I.push(`${cap(ls)} aphakia/pseudophakia.`)}
+  let out=P.join('\n\n');
+  if(I.length)out+='\n\nIMPRESSION:\n'+I.map(x=>'- '+x).join('\n');
+  return out;
+}
+function buildMRQC(){
+  const P=[],I=[];
+  const tech=document.querySelector('input[name=tech]:checked').value;
+  const contrast=tech.startsWith('Contrast');
+  const tq=contrast?'Contrast-enhanced cranial CT scan':'Plain cranial CT scan';
+  P.push(`Clinical data: ${v('clin')||'____'}\nTechnique: ${tq}.\nComparison: ${comp()}`);
+  const st=contrast?'contrast-enhanced':'plain';
+  let nl='';{const nh=!c('hem'),ni=!c('ifc');let t;
+  if(nh&&ni)t=`No evident acute infarct or intracranial hemorrhage in this ${st} study.`;
+  else if(ni)t=`No evident acute infarct in this ${st} study.`;
+  else if(nh)t=`No evident intracranial hemorrhage in this ${st} study.`;
+  else t='';
+  if(nh&&ni){P.push(t);I.push(`No evidence of acute infarct or intracranial hemorrhage in this ${st} study. Suggest follow-up (CT/MRI) if clinically warranted.`)}else nl=t;}
+  doInf(P,I);
+  doHem(P,I,volume());
+  if(nl)P.push(nl);
+  if(contrast&&c('enh')){P.push('No undue parenchymal or leptomeningeal enhancement.');I.push('No undue parenchymal or leptomeningeal enhancement.')}
+  const inf=v('inf'),il=v('infloc')||'____';
+  if(inf==='1'){P.push(`A well-defined, CSF-attenuating hypodensity is seen in the ${il}.`);I.push(`Old lacunar infarct in the ${il}.`)}
+  else if(inf){P.push(`${inf} well-defined, CSF-attenuating hypodensities are seen in the ${il}.`);I.push(`Old lacunar infarcts in the ${il}.`)}
+  if(c('wmc')){P.push('Faint patchy and confluent hypodensities are appreciated in the periventricular and deep subcortical white matter of the bilateral frontal and parietal lobes.');I.push('Chronic microvascular ischemic white matter changes.')}
+  const m=[];
+  if(c('mid'))m.push('Midline structures are in place.');
+  {const t=stemT('Brainstem and cerebellum are intact.');if(t)m.push(t)}
+  const vt=document.querySelector('input[name=vent]:checked').value;
+  if(vt==='n')m.push('Ventricles are not dilated. Cerebral cortical sulci, fissures, cisterns, and ventricular system are unremarkable.');
+  if(vt==='a'){m.push('There is mild symmetric widening of the bilateral cerebral sulci and bilateral Sylvian fissures with proportionate dilatation of the ventricles.');I.push('Mild age-related cerebral volume loss.')}
+  if(vt==='b'){m.push('There is mild symmetric widening of the bilateral cerebral sulci and cerebellar foliae, and bilateral Sylvian fissures with proportionate dilatation of the ventricles.');I.push('Mild age-related cerebro-cerebellar volume loss.')}
+  const part=(s,n)=>s==='bilateral'?`bilateral ${n} arteries`:`${s} ${n} artery`;
+  if(c('cal')){const a=c('cic')?v('cics'):'',b=c('cva')?v('cvas'):'';let calt='';
+    if(a&&b)calt=a===b?`${a} internal carotid and vertebral arteries`:`${part(a,'internal carotid')} and ${part(b,'vertebral')}`;
+    else if(a)calt=part(a,'internal carotid');else if(b)calt=part(b,'vertebral');
+    if(calt){const sv=v('calsev')==='Extensive'?'Severe':v('calsev');m.push(`${sv} segmental wall calcifications are seen lining the ${calt}.`);I.push(`${sv} atherosclerotic vessel disease.`)}}
+  if(m.length)P.push(m.join(' '));
+  const SIN2=SIN.filter(s=>ss(s)).map(s=>`${ss(s)} ${s}`);
+  const nor=c('sin'),sit=!nor&&c('sit'),mas=!nor&&c('mas'),len=!nor&&c('lens');
+  const S=['Calvarium is intact.'];
+  if(len){const ls=v('lts');S.push(ls==='bilateral'?'There is thinning of the bilateral lenses.':`There is thinning of the ${ls} lens.`)}else S.push('Bilateral orbital regions are unremarkable.');
+  const sltxt=SIN2.length?join(SIN2):'____',ms2=v('mts');
+  if(sit)S.push(`Fluid/soft tissue densities are seen in the ${sltxt} ${SIN2.length===1&&!SIN2[0].startsWith('bilateral')?'sinus':'sinuses'}.`);
+  if(mas)S.push(v('mta')==='Acute'?`Fluid/soft tissue densities are seen in the ${ms2} mastoid air cells.`:`The ${ms2} mastoid air cells are partly sclerotic.`);
+  if(!sit&&!mas)S.push('The paranasal sinuses and bilateral mastoids are well-aerated and clear.');
+  else{const nsel=SIN.filter(s=>ss(s)),allSin=nsel.length===4&&nsel.every(s=>ss(s)==='bilateral'),parts=[];
+    if(!sit||!allSin)parts.push(sit?'rest of the imaged paranasal sinuses':'paranasal sinuses');
+    if(!(mas&&ms2==='bilateral'))parts.push(mas?(ms2==='left'?'right':'left')+' petromastoids':'bilateral mastoids');
+    if(parts.length)S.push('The '+parts.join(' and ')+' are well-aerated and clear.')}
+  P.push(S.join(' '));
+  if(sit){const it=SIN.filter(s=>ss(s)).map(s=>({s,d:ss(s)}));
+    if(it.length>2)I.push('Polysinus disease.');
+    else if(it.length===2&&it[0].d===it[1].d)I.push(`${cap(it[0].d)} ${it[0].s} and ${it[1].s} sinus disease.`);
+    else I.push(cap(it.length?it.map(x=>`${x.d} ${x.s}`).join(' and '):'____')+' sinus disease.')}
+  if(mas){const ma=v('mta').toLowerCase();I.push(ms2==='bilateral'?`Bilateral ${ma} mastoid disease.`:`${cap(ma)} ${ms2} mastoid disease.`)}
+  if(len)I.push(`${cap(v('lts'))} aphakia/pseudophakia.`);
+  return P.join('\n\n')+'\n\nIMPRESSION:\n'+I.map(x=>'- '+x).join('\n');
+}
+
+function buildJNO(){
+  const P=[],I=[];
+  const contrast=document.querySelector('input[name=tech]:checked').value.startsWith('Contrast');
+  P.push(`CT SCAN OF THE BRAIN (${contrast?'CONTRAST-ENHANCED':'NON-CONTRAST'})\nClinical data: ${v('clin')||'____'}\nComparison: ${comp()}.`);
+  let nl='';{const nh=!c('hem'),ni=!c('ifc');let t;
+  if(nh&&ni)t='No acute intracranial hemorrhage. No large acute territorial infarct. No focal brain edema. No gross brain mass.';
+  else if(ni)t='No large acute territorial infarct. No gross brain mass.';
+  else if(nh)t='No acute intracranial hemorrhage. No gross brain mass.';
+  else t='';
+  if(nh&&ni){P.push(t);I.push(t)}else nl=t;}
+  doInf(P,I);
+  doHem(P,I,volume());
+  if(nl)P.push(nl);
+  if(contrast&&c('enh')){P.push('No undue leptomeningeal or parenchymal enhancement.');I.push('No undue leptomeningeal or parenchymal enhancement.')}
+  const wm=v('wm');
+  if(wm){P.push(`${wm} patchy hypodense changes are seen in the bilateral frontoparietal white matter.`);I.push(`${wm} microvascular white matter ischemic changes.`)}
+  const m=[],l1=[];
+  if(c('mid'))l1.push('Midline structures are in place.');
+  {const t=stemT('Brainstem and cerebellum are unremarkable.');if(t)l1.push(t)}
+  if(l1.length)m.push(l1.join(' '));
+  const vt=document.querySelector('input[name=vent]:checked').value;
+  if(vt==='n')m.push('Cerebral cortical sulci, cerebellar fissures, ventricles, and cisterns are unremarkable.');
+  if(vt==='a'){m.push('Cerebral cortical sulci, ventricles, and cisterns are mildly prominent.');I.push('Age-related mild cerebral volume loss.')}
+  if(vt==='b'){m.push('Cerebral cortical sulci, cerebellar fissures, ventricles, and cisterns are mildly prominent.');I.push('Age-related mild cerebrocerebellar volume loss.')}
+  m.push(`Sella is ${document.querySelector('input[name=sel]:checked').value}. Cerebellopontine angles are unremarkable.`);
+  P.push(m.join('\n'));
+  let ath=false,mild=false;
+  if(c('cal')){const a=c('cic')?v('cics'):'',b=c('cva')?v('cvas'):'';let calt='';
+    if(a&&b)calt=a===b?`${a} internal carotid and vertebral arteries`:`${a} internal carotid and ${b} vertebral arteries`;
+    else if(a)calt=a==='bilateral'?'bilateral internal carotid arteries':`${a} internal carotid artery`;
+    else if(b)calt=b==='bilateral'?'bilateral vertebral arteries':`${b} vertebral artery`;
+    if(calt){const sv=v('calsev')==='Extensive'?'Marked':v('calsev');ath=true;mild=sv==='Mild';
+      P.push(`${sv} wall calcifications are seen in the ${calt}.`);
+      I.push(`${sv} intracranial atherosclerosis.`+(mild?' Despite being mild, this is abnormal and unusual for age.':'')+' Recommend overall cardiovascular wellness evaluation. Correlate with clinical and laboratory parameters.')}}
+  const SIN2=SIN.filter(s=>ss(s)).map(s=>`${ss(s)} ${s}`);
+  const nor=c('sin'),sit=!nor&&c('sit'),mas=!nor&&c('mas'),len=!nor&&c('lens'),ms2=v('mts');
+  const L1=[];
+  const sltxt=SIN2.length?join(SIN2):'____';
+  if(sit)L1.push(`Fluid/soft tissue densities are seen in the ${sltxt} ${SIN2.length===1&&!SIN2[0].startsWith('bilateral')?'sinus':'sinuses'}.`);
+  if(mas)L1.push(v('mta')==='Acute'?`Fluid/soft tissue densities are seen in the ${ms2} mastoid air cells.`:`The ${ms2} mastoid air cells are partly sclerotic.`);
+  const nsel=SIN.filter(s=>ss(s)),allSin=nsel.length===4&&nsel.every(s=>ss(s)==='bilateral'),parts=[];
+  if(!(sit&&allSin))parts.push(sit?'rest of the imaged paranasal sinuses':'paranasal sinuses');
+  if(!(mas&&ms2==='bilateral'))parts.push(mas?(ms2==='left'?'right':'left')+' petromastoids':'petromastoids');
+  if(parts.length)L1.push('The '+parts.join(' and ')+' are essentially clear and well-aerated.');
+  const L2=len?(v('lts')==='bilateral'?'There is thinning of the bilateral lenses.':`There is thinning of the ${v('lts')} lens.`):'Orbits and intra-orbital structures appear normal.';
+  P.push(L1.join(' ')+'\n'+L2+'\nImaged osseous structures are intact. No acute calvarial or skull base fracture.');
+  if(sit&&allSin)I.push('Pansinusitis.');
+  if(mas){const ma=v('mta').toLowerCase();I.push(ms2==='bilateral'?`Bilateral ${ma} mastoid disease.`:`${cap(ma)} ${ms2} mastoid disease.`)}
+  if(!c('hem')&&!c('ifc')&&!wm&&vt==='n'&&!ath&&!mas&&!(sit&&allSin))I.unshift(`Unremarkable ${contrast?'contrast-enhanced':'non-contrast'} cranial CT scan.`);
+  return P.join('\n\n')+'\n\nIMPRESSION:\n'+I.map(x=>'- '+x).join('\n');
+}
+function build(){const t=$('tpl').value;return t==='mrqc'?buildMRQC():t==='jno'?buildJNO():buildStd()}
+function refresh(){
+  const vol=volume();
+  $('vol').textContent=vol===null?'—':vol.toFixed(1);
+  $('hemx').hidden=!c('hem');
+  $('ivhx').hidden=!c('ivh');
+  $('calx').hidden=!c('cal');
+  $('abn').hidden=c('sin');
+  $('sitx').hidden=!c('sit');
+  $('mastx').hidden=!c('mas');
+  $('lensx').hidden=!c('lens');
+  $('ifcx').hidden=!c('ifc');
+  $('evl').hidden=v('ifa')!=='Chronic';
+  $('evx').hidden=v('ifa')!=='Chronic'||!c('evc');
+  $('enhf').hidden=!document.querySelector('input[name=tech]:checked').value.startsWith('Contrast');
+  $('compx').hidden=v('comp')==='None';
+  $('shx').hidden=!c('shc');
+  $('infloc').hidden=!v('inf');
+  $('uncx').hidden=!c('uncc');
+  
+  const mq=v('tpl')==='mrqc';
+  const jn=v('tpl')==='jno';
+  $('tpls').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v('tpl')));
+  $('lacf').hidden=jn;$('stemx').hidden=c('stem');
+  $('sellaw').hidden=mq;$('wmstd').hidden=mq;$('wmmq').hidden=!mq;$('tn').textContent=mq?'Plain':(jn||v('tpl')==='jnos')?'Non-contrast':'Non-enhanced';
+  const shift=c('hem')&&c('shc');
+  if(shift&&!$('mid').disabled){midWas=$('mid').checked;$('mid').checked=false;$('mid').disabled=true}
+  else if(!shift&&$('mid').disabled){$('mid').disabled=false;$('mid').checked=midWas}
+  if(!c('lock'))$('rep').value=build();
+}
+$('f').addEventListener('input',refresh);
+$('f').addEventListener('change',refresh);
+$('sitx').addEventListener('change',e=>{const m=e.target.id.match(/^s_(\w+)_(l|r|b)$/);if(!m)return;const s=m[1];
+  if(m[2]==='b')$('s_'+s+'_l').checked=$('s_'+s+'_r').checked=e.target.checked;
+  else $('s_'+s+'_b').checked=$('s_'+s+'_l').checked&&$('s_'+s+'_r').checked});
+$('lock').addEventListener('change',refresh);
+$('tpls').innerHTML=[...$('tpl').options].map(o=>`<button type="button" data-v="${o.value}" aria-pressed="false">${o.textContent}</button>`).join('');
+$('tpls').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('tpl').value=b.dataset.v;refresh()});
+$('ivhx').addEventListener('change',e=>{const t=e.target.id;if(t==='iv_b')$('iv_l').checked=$('iv_r').checked=e.target.checked;else if(t==='iv_l'||t==='iv_r')$('iv_b').checked=$('iv_l').checked&&$('iv_r').checked});
+$('copy').addEventListener('click',()=>{
+  if(!v('clin')){$('clin').focus();$('msg').textContent='Clinical data is required before copying.';return}
+  const d=document.createElement('div');d.contentEditable='true';d.style.cssText='position:fixed;left:-9999px;top:0;font-family:Arial,sans-serif;font-size:12pt';d.innerHTML=toHtml($('rep').value);document.body.appendChild(d);const rg=document.createRange();rg.selectNodeContents(d);const sel=getSelection();sel.removeAllRanges();sel.addRange(rg);
+  let ok=false;
+  const onCopy=e=>{e.clipboardData.setData('text/html',toHtml($('rep').value));e.clipboardData.setData('text/plain',$('rep').value);e.preventDefault()};
+  document.addEventListener('copy',onCopy);
+  try{ok=document.execCommand('copy')}catch(e){}
+  document.removeEventListener('copy',onCopy);sel.removeAllRanges();d.remove();
+  $('msg').textContent=ok?'Copied with bold headings.':'Copy blocked here. Select the text and copy it manually.';
+});
+$('reset').addEventListener('click',()=>{$('f').reset();midWas=true;$('lock').checked=false;refresh();$('msg').textContent='Form cleared.'});
+refresh();
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"6e0a66e7abc64f769274ed37a5f37c8b","r":1,"spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"6e0a66e7abc64f769274ed37a5f37c8b","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
