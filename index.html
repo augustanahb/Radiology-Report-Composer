@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cranial CT Report Maker</title>
+<title>CT Report Maker</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 :root{--bg:#eef2f4;--sf:#fff;--ink:#14232b;--mut:#5b6b73;--ln:#cfd8dc;--ac:#0d6e6e;--acs:#dff1f1;--on:#fff;
@@ -56,27 +56,30 @@ button.ghost{background:transparent;color:var(--ac)}
 .grp[aria-expanded="false"]{background:transparent;color:var(--ac)}
 .grp .chev{display:inline-block;transition:transform .15s}
 .grp[aria-expanded="true"] .chev{transform:rotate(90deg)}
-#curtpl{margin:6px 2px 0}
-#tpls{margin-top:8px}
+#curtpl{margin:10px 2px 0}
+#tpls,#atpls{margin-top:8px}
+#abdbtn{margin-top:8px}
 @media (prefers-reduced-motion:reduce){.grp .chev{transition:none}}
 </style>
 </head>
 <body>
 <header>
-<h1>Cranial CT Report Composer</h1>
+<h1>CT Report Composer</h1>
 </header>
 <main>
 <aside class="side" aria-label="Modality and template">
 <section><h2>CT</h2>
 <button type="button" class="grp" id="cranbtn" aria-expanded="false" aria-controls="tpls">Cranial <span class="chev" aria-hidden="true">&#9656;</span></button>
-<div class="note" id="curtpl"></div>
-<div class="tpls" id="tpls" role="group" aria-label="Cranial CT report templates" hidden></div></section>
+<div class="tpls" id="tpls" role="group" aria-label="Cranial CT report templates" hidden></div>
+<button type="button" class="grp" id="abdbtn" aria-expanded="false" aria-controls="atpls">Abdomen <span class="chev" aria-hidden="true">&#9656;</span></button>
+<div class="tpls" id="atpls" role="group" aria-label="Abdominal CT report templates" hidden></div>
+<div class="note" id="curtpl"></div></section>
 <section><h2>US <span class="wip">WIP</span></h2></section>
 <section><h2>MRI <span class="wip">WIP</span></h2></section>
 </aside>
 <form id="f" onsubmit="return false">
 
-<select id="tpl" hidden><option value="std">CT Cranial - Standard</option><option value="jnos">CT Cranial - JNO</option><option value="mrqc">CT Cranial - MRQC</option><option value="jno">CT Cranial (Young) - JNO</option><option value="jjm">CT Cranial - JJM</option></select>
+<select id="tpl" hidden><option value="std">CT Cranial - Standard</option><option value="jnos">CT Cranial - JNO</option><option value="mrqc">CT Cranial - MRQC</option><option value="jno">CT Cranial (Young) - JNO</option><option value="jjm">CT Cranial - JJM</option><option value="abd" data-g="abd">CT Abdomen - Standard</option></select>
 
 <fieldset><legend>Study</legend>
 <label class="in">Clinical data (required) <input type="text" id="clin" required placeholder="Enter clinical data"></label>
@@ -208,6 +211,100 @@ Side <span class="rg" id="lts"></span></div>
 </fieldset>
 </form>
 
+<form id="fa" onsubmit="return false" hidden>
+
+<fieldset><legend>Study</legend>
+<label class="in">Clinical information (required) <input type="text" id="aclin" required placeholder="Enter clinical information"></label>
+<label class="in">Technique <select id="atech" style="max-width:100%"><option value="Plain and contrast enhanced (oral, rectal, and IV) CT scan of the whole abdomen">Triple Contrast</option><option value="Plain and contrast enhanced (rectal and IV) CT scan of the whole abdomen">Rectal and IV</option><option value="Plain and contrast enhanced (IV only) CT scan of the whole abdomen">IV only</option><option value="Plain CT scan of the whole abdomen">Plain CT scan of the whole abdomen</option></select></label>
+<label class="in">Comparison <select id="acomp"><option value="None">None</option><option value="Plain and contrast enhanced (oral, rectal, and IV) CT scan of the whole abdomen">Triple Contrast</option><option value="Plain and contrast enhanced (rectal and IV) CT scan of the whole abdomen">Rectal and IV</option><option value="Plain and contrast enhanced (IV only) CT scan of the whole abdomen">IV only</option><option value="Plain CT scan of the whole abdomen">Plain CT scan of the whole abdomen</option></select></label>
+<div id="acompx" class="sub" hidden><label class="in">Date <input type="date" id="acompd"></label></div>
+</fieldset>
+
+<fieldset><legend>Liver</legend>
+<label class="in">Mid hepatic length (cm) <input type="number" id="a_liv" step="0.1" min="0" placeholder="cm"></label>
+<label><input type="checkbox" id="a_lpar" checked>Homogeneous parenchyma</label>
+<label><input type="checkbox" id="a_lcon">Nodular contour</label>
+<label><input type="checkbox" id="a_lmass">Mass</label>
+<label><input type="checkbox" id="a_lduct">Dilated intrahepatic ducts</label>
+<label><input type="checkbox" id="a_lves">Dilated portal / hepatic veins</label>
+<div id="a_lvesx" class="sub" hidden>
+<div class="row">Portal vein <input type="text" id="a_pv" placeholder="e.g. 1.5 cm"></div>
+<div class="row">Hepatic veins <input type="text" id="a_hv" placeholder="e.g. 1.2 cm"></div>
+</div>
+</fieldset>
+
+<fieldset id="a_gbf"><legend>Gallbladder and biliary tree</legend>
+<label><input type="checkbox" id="a_gbwell" checked>Well-distended</label>
+<div id="a_gbstatex" class="sub" hidden><div class="row">Status
+<label style="margin:0"><input type="radio" name="a_gbstate" value="partially contracted" checked>Partially contracted</label>
+<label style="margin:0"><input type="radio" name="a_gbstate" value="contracted">Contracted</label>
+</div></div>
+<label><input type="checkbox" id="a_gbthick">Thickened wall</label>
+<div id="a_gbthickx" class="sub" hidden><label class="in">Thickness <input type="text" id="a_gbthickness" placeholder="e.g. 0.4 cm"></label></div>
+<div id="a_gbfluidrow" hidden><label><input type="checkbox" id="a_gbfluid">Pericholecystic fluid</label></div>
+<label><input type="checkbox" id="a_gbstone">Cholecystolithiasis</label>
+<label><input type="checkbox" id="a_gbsludge">Biliary sludge</label>
+<div style="margin-top:18px;padding-top:8px;border-top:1px solid var(--ln)">
+<label><input type="checkbox" id="a_cbd">Dilated common bile duct</label>
+<div id="a_cbdx" class="sub" hidden><label class="in">Diameter <input type="text" id="a_cbdiam" placeholder="e.g. 0.8 cm"></label></div>
+<div id="a_cbdensityrow" hidden><label><input type="checkbox" id="a_cbdensity">Intraluminal densities</label>
+<div id="a_cbdensityx" class="sub" hidden><label class="in">Size <input type="text" id="a_cbdsize" placeholder="e.g. 0.5 cm"></label></div></div>
+</div>
+</fieldset>
+
+<fieldset><legend>Kidneys</legend>
+<label><input type="checkbox" id="a_ksz" checked>Normal size</label>
+<div id="a_enw"><label><input type="checkbox" id="a_ken" checked>Good parenchymal enhancement</label>
+<div id="a_esx" class="sub" hidden><div class="row">Poor enhancement side <span class="rg" id="a_es"></span></div></div></div>
+<label><input type="checkbox" id="a_nohc" checked>No hydronephrosis or calculi</label>
+<div id="a_nohx" class="sub" hidden>
+<label><input type="checkbox" id="a_khyd">Hydronephrosis</label>
+<div id="a_khydx" class="sub" hidden>
+<div class="row">Side <span class="rg" id="a_hs"></span></div>
+<div class="row">Degree <select id="a_hd"><option value="mild">Mild</option><option value="moderate">Moderate</option><option value="marked">Marked</option></select></div>
+</div>
+<label><input type="checkbox" id="a_kcal">Calculi</label>
+<div id="a_kcalx" class="sub" hidden>
+<div class="row">Hounsfield unit <input type="text" id="a_khu" placeholder="e.g. 450" style="flex:0 1 110px"></div>
+<div class="row">Location <input type="text" id="a_kloc" placeholder="e.g. right lower pole"></div>
+<div class="row">Size <input type="text" id="a_kcsz" placeholder="e.g. 0.5 cm" style="flex:0 1 110px"></div>
+</div>
+</div>
+<label><input type="checkbox" id="a_rl">Cyst</label>
+<div id="a_rlx" class="sub" hidden>
+<div class="row">Quantity <select id="a_rq"><option>Few</option><option>Several</option><option>Multiple</option></select>
+Type <select id="a_rt"><option value="simple">Simple</option><option value="complex">Complex</option><option value="simple and complex">Simple and Complex</option></select></div>
+<div class="row">Side <span class="rg" id="a_rs"></span></div>
+<div class="row" id="a_rrow">Right: largest in the <input type="text" id="a_rloc" placeholder="e.g. upper pole"> up to <input type="text" id="a_rsz" placeholder="e.g. 2.1 cm" style="flex:0 1 110px"></div>
+<div class="row" id="a_lrow">Left: largest in the <input type="text" id="a_lloc" placeholder="e.g. lower pole"> up to <input type="text" id="a_lsz" placeholder="e.g. 1.5 cm" style="flex:0 1 110px"></div>
+</div>
+</fieldset>
+
+
+
+<fieldset><legend>Pelvic organs</legend>
+<span class="rg" id="a_sex"><label><input type="radio" name="asex" value="" checked>Omit</label><label><input type="radio" name="asex" value="m">Male (prostate)</label><label><input type="radio" name="asex" value="f">Female (uterus and adnexa)</label></span>
+</fieldset>
+
+<fieldset><legend>Stomach</legend>
+<span class="rg" id="a_stom"><label><input type="radio" name="astom" value="w" checked>Well distended</label><label><input type="radio" name="astom" value="s">Suboptimally distended</label></span>
+</fieldset>
+
+<fieldset><legend>Aorta and iliac arteries</legend>
+<label><input type="checkbox" id="a_cal">Wall calcifications</label>
+<div id="a_calx" class="sub" hidden>
+<div class="row">Severity <select id="a_calsev"><option>Minimal</option><option>Mild</option><option>Moderate</option><option>Extensive</option></select></div>
+</div>
+</fieldset>
+
+<fieldset><legend>Osseous structures</legend>
+<label><input type="checkbox" id="a_ost">Osteophytes in the marginal endplates of the thoracolumbar spine</label>
+<div id="a_ostx" class="sub" hidden>
+<div class="row">Quantity <select id="a_ostq"><option>Few</option><option>Several</option><option>Multiple</option></select></div>
+</div>
+</fieldset>
+</form>
+
 <section class="out">
 <div class="bar">
 <button type="button" id="copy">Copy report</button>
@@ -225,7 +322,7 @@ const c=id=>$(id).checked;
 const num=id=>parseFloat($(id).value);
 const B='___';
 const radios=id=>['bilateral','left','right'].map(x=>`<label><input type="radio" name="${id}" value="${x}"${x==='bilateral'?' checked':''}>${x[0].toUpperCase()+x.slice(1)}</label>`).join('');
-['mts','lts'].forEach(id=>{$(id).innerHTML=radios(id)});
+['mts','lts','a_rs','a_hs','a_es'].forEach(id=>{$(id).innerHTML=radios(id)});
 const SIN=['frontal','ethmoid','maxillary','sphenoid'];
 const ivl=()=>{const l=c('iv_l'),r=c('iv_r'),a=[];if(l&&r)a.push('bilateral lateral ventricles');else if(l)a.push('left lateral ventricle');else if(r)a.push('right lateral ventricle');if(c('iv_3'))a.push('third ventricle');if(c('iv_4'))a.push('fourth ventricle');return a.length?join(a):'____'};
 const ss=s=>{const l=c('s_'+s+'_l'),r=c('s_'+s+'_r');return l&&r?'bilateral':l?'left':r?'right':''};
@@ -235,10 +332,10 @@ const join=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 function toHtml(t){const e=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');let imp=false;
   return e.split('\n').map(l=>{if(l==='IMPRESSION')imp=true;
-    let h=l.replace(/^(CT SCAN OF THE BRAIN \((?:NON-CONTRAST|CONTRAST-ENHANCED)\)|Clinical data:|Clinical Data:|Technique:|Comparison:|Findings:|IMPRESSION:)/,'<b>$1</b>');
+    let h=l.replace(/^(CT SCAN OF THE BRAIN \((?:NON-CONTRAST|CONTRAST-ENHANCED)\)|Clinical data:|Clinical Data:|Clinical information:|Technique:|Comparison:|Findings:|IMPRESSION:)/,'<b>$1</b>');
     if(imp&&l.trim())h='<b>'+l+'</b>';
     return '<span style="font-family:Arial,sans-serif;font-size:12pt;background-color:transparent">'+h+'</span>'}).join('<br>')}
-function comp(){const k=v('comp');if(k==='None')return k;const d=$('compd').value,M=['January','February','March','April','May','June','July','August','September','October','November','December'],p=d?d.split('-'):null;return k+' dated '+(p?`${M[+p[1]-1]} ${+p[2]}, ${p[0]}`:'____')}
+function comp(s='comp',dt='compd'){const k=v(s);if(k==='None')return k;const d=$(dt).value,M=['January','February','March','April','May','June','July','August','September','October','November','December'],p=d?d.split('-'):null;return k+' dated '+(p?`${M[+p[1]-1]} ${+p[2]}, ${p[0]}`:'____')}
 function volume(){const a=num('ap'),b=num('tr'),d=num('cc');return(a>0&&b>0&&d>0)?a*b*d*0.524:null}
 function doInf(P,I){if(c('ifc')){const ag=v('ifa'),lc=v('ifl')||'____',df={Acute:'Ill-defined',Subacute:'Fairly-defined',Chronic:'Well-defined'}[ag];
     const ev=ag==='Chronic'&&c('evc');
@@ -496,8 +593,104 @@ function buildJJM(){
   const b1=[...A,...N.map((x,i)=>`${i+1}. ${x}`)];
   return P.join('\n\n')+'\n\nIMPRESSION\n\n'+[b1.join('\n'),R.join('\n')].filter(Boolean).join('\n\n');
 }
-function build(){const t=$('tpl').value;return t==='mrqc'?buildMRQC():t==='jno'?buildJNO():t==='jjm'?buildJJM():buildStd()}
+function buildAbd(){
+  const t=$('atech').value,ce=/contrast/.test(t),P=[],I=[];
+  P.push(`Clinical information: ${v('aclin')||'____'}\nTechnique: ${t}.\nComparison: ${comp('acomp','acompd')}.`);
+  const lv=parseFloat(v('a_liv')),big=lv>15.5,lw=[];
+  if(c('a_lpar'))lw.push('homogeneous parenchyma');
+  lw.push(c('a_lcon')?'nodular contour':'smooth contour');
+  const L=[`The liver is ${big?'enlarged':'normal in size'} (mid hepatic length of ${v('a_liv')||B} cm)${lw.length?' with '+lw.join(' and '):''}.`];
+  L.push(c('a_lmass')?'A mass lesion is seen in the liver measuring up to ____.':`No discrete ${ce?'enhancing ':''}mass is noted.`);
+  L.push(c('a_lduct')?'Intrahepatic ducts are dilated.':'Intrahepatic ducts are not dilated.');
+  if(c('a_lves')){const pv=v('a_pv'),hv=v('a_hv');
+    L.push(pv?`Portal vein is dilated measuring up to ${pv}.`:'Portal vein is not dilated.');
+    L.push(hv?`Hepatic veins are dilated measuring up to ${hv}.`:'Hepatic veins are not dilated.');
+  }else L.push('Portal and hepatic veins are not dilated.');
+  P.push(L.join(' '));
+  const gb=[];
+  if(c('a_gbwell')) gb.push('The gallbladder is well distended'+(c('a_gbthick')?' with a thickened wall'+(v('a_gbthickness')?` measuring ${v('a_gbthickness')}`:''):' with non-thickened walls')+'.');
+  else {
+    const state=v('a_gbstate');
+    gb.push(state==='contracted'
+      ?'The gallbladder is contracted, precluding optimal evaluation of its wall.'
+      :'The gallbladder is partially contracted, precluding optimal evaluation of its wall.');
+    if(c('a_gbthick')) gb.push('Gallbladder wall thickening is noted'+(v('a_gbthickness')?`, measuring ${v('a_gbthickness')}`:'')+'.');
+  }
+  if(c('a_gbthick')&&c('a_gbfluid')) gb.push('Pericholecystic fluid is present.');
+  if(c('a_gbstone')) gb.push('Gallbladder calculi are present.');
+  if(c('a_gbsludge')) gb.push('Biliary sludge is present.');
+  gb.push(c('a_cbd')?'The common bile duct is dilated'+(v('a_cbdiam')?`, measuring ${v('a_cbdiam')}`:'')+'.':'The common bile duct is not dilated.');
+  if(c('a_cbd')&&c('a_cbdensity')) gb.push('Intraluminal densities are seen in the common bile duct'+(v('a_cbdsize')?`, measuring ${v('a_cbdsize')}`:'')+'.');
+  P.push(gb.join(' ')+' Pancreas is normal in size without focal density change. Pancreatic duct is not dilated. Spleen is normal in size with homogenous parenchyma. Both adrenal glands are normal.');
+  const K=[];
+  const ksz=c('a_ksz'),ken=c('a_ken');
+  const es=v('a_es'),poorBoth=ce&&!ken&&es==='bilateral';
+  if(ksz&&(!ce||ken||poorBoth))K.push(`Both kidneys are normal in size${ce?` with ${ken?'good':'poor'} parenchymal enhancement`:''}.`);
+  else{
+    K.push(ksz?'Both kidneys are normal in size.':`Kidney size is ${B}.`);
+    if(ce)K.push(ken?'There is good parenchymal enhancement.':poorBoth?'There is poor parenchymal enhancement.':`There is poor parenchymal enhancement of the ${es} kidney.`);
+  }
+  if(c('a_nohc'))K.push('No hydronephrosis or calculi.');
+  else{
+    const hy=c('a_khyd'),ca=c('a_kcal');
+    if(hy){
+      const hs=v('a_hs'),hd=v('a_hd');
+      K.push(hs==='bilateral'?`${cap(hd)} bilateral hydronephrosis is seen.`:`${cap(hd)} hydronephrosis is seen in the ${hs} kidney.`);
+      I.push(hs==='bilateral'?`${cap(hd)} bilateral hydronephrosis.`:`${cap(hd)} ${hs} hydronephrosis.`);
+    }else if(ca)K.push('No hydronephrosis.');
+    if(ca){
+      const hu=v('a_khu').replace(/\s*HU\s*$/i,'')||B,lo=v('a_kloc')||B,sz=v('a_kcsz')||B;
+      K.push(`A calculus is seen in the ${lo} measuring up to ${sz} with attenuation of ${hu} HU.`);
+      I.push(`Renal calculus in the ${lo}.`);
+    }else if(hy)K.push('No calculi.');
+  }
+  if(c('a_rl')){
+    const q=v('a_rq'),ty=v('a_rt'),sd=v('a_rs'),rl=v('a_rloc')||B,rz=v('a_rsz')||B,ll=v('a_lloc')||B,lz=v('a_lsz')||B;
+    K.push(sd==='bilateral'
+      ?`${q} ${ty} fluid-attenuating lesions are seen bilaterally with the largest in the right seen in the ${rl} measuring up to ${rz}, and the largest in the left noted in the ${ll} measuring up to ${lz}.`
+      :`${q} ${ty} fluid-attenuating lesions are seen in the ${sd} kidney with the largest noted in the ${sd==='right'?rl:ll} measuring up to ${sd==='right'?rz:lz}.`);
+    I.push(sd==='bilateral'?`Bilateral ${ty} renal cystic lesions.`:`${cap(ty)} cystic lesions in the ${sd} kidney.`);
+  }
+  K.push('Urinary bladder is well distended with non-thickened walls. No abnormal intravesical densities.');
+  const sx=v('a_sex');
+  if(sx==='m')K.push('Prostate gland is normal in size.');
+  if(sx==='f')K.push('Uterus is normal in size. No adnexal mass lesion.');
+  P.push(K.join(' '));
+  P.push(['Distal esophagus appears normal.',v('a_stom')==='s'?'Stomach is suboptimally distended.':'Stomach is well distended without overt wall thickening.','Small and large bowels are not dilated. Appendix is not dilated. No overt colonic wall thickening. No ascites or pneumoperitoneum.'].join(' '));
+  const R=['No enlarged mesenteric, retroperitoneal, pelvic or inguinal lymph nodes.','Abdominal aorta is normal in caliber.'];
+  if(c('a_cal')){const sv=v('a_calsev');R.push(`${sv} wall calcifications are seen lining the aorta and iliac arteries.`);I.push(`${sv==='Extensive'?'Severe':sv} atherosclerotic changes of the aorta and iliac arteries.`)}
+  R.push('Osseous structures are unremarkable.');
+  if(c('a_ost')){R.push(`${v('a_ostq')} osteophytes are noted in the marginal endplates of the thoracolumbar spine.`);I.push('Degenerative changes of the thoracolumbar spine.')}
+  R.push('No gross lytic or blastic osseous changes.');
+  P.push(R.join(' '));
+  P.push('Imaged lower thorax appears unremarkable.');
+  if(!I.length)I.push('Unremarkable CT scan of the whole abdomen.');
+  return P.join('\n\n')+'\n\nIMPRESSION:\n'+I.map(x=>'- '+x).join('\n');
+}
+function build(){const t=$('tpl').value;return t==='abd'?buildAbd():t==='mrqc'?buildMRQC():t==='jno'?buildJNO():t==='jjm'?buildJJM():buildStd()}
 function refresh(){
+  const ab=v('tpl')==='abd';
+  $('f').hidden=ab;$('fa').hidden=!ab;
+  $('acompx').hidden=v('acomp')==='None';
+  $('a_rlx').hidden=!c('a_rl');
+  $('a_lvesx').hidden=!c('a_lves');
+  $('a_gbstatex').hidden=c('a_gbwell');
+  $('a_gbthickx').hidden=!c('a_gbthick');
+  $('a_gbfluidrow').hidden=!c('a_gbthick');
+  if(!c('a_gbthick')) $('a_gbfluid').checked=false;
+  $('a_cbdx').hidden=!c('a_cbd');
+  $('a_cbdensityrow').hidden=!c('a_cbd');
+  if(!c('a_cbd')) $('a_cbdensity').checked=false;
+  $('a_cbdensityx').hidden=!c('a_cbd')||!c('a_cbdensity');
+  $('a_nohx').hidden=c('a_nohc');
+  $('a_khydx').hidden=!c('a_khyd');
+  $('a_kcalx').hidden=!c('a_kcal');
+  $('a_esx').hidden=c('a_ken');
+  $('a_enw').hidden=!/contrast/.test($('atech').value);
+  $('a_rrow').hidden=v('a_rs')==='left';
+  $('a_lrow').hidden=v('a_rs')==='right';
+  $('a_calx').hidden=!c('a_cal');
+  $('a_ostx').hidden=!c('a_ost');
   const vol=volume();
   $('vol').textContent=vol===null?'—':vol.toFixed(1);
   $('hemx').hidden=!c('hem');
@@ -519,7 +712,7 @@ function refresh(){
   
   const mq=v('tpl')==='mrqc';
   const jn=v('tpl')==='jno';
-  $('tpls').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v('tpl')));
+  document.querySelectorAll('.tpls button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v('tpl')));
   $('curtpl').textContent='Selected: '+$('tpl').selectedOptions[0].textContent;
   $('lacf').hidden=jn;$('stemx').hidden=c('stem');
   $('sellaw').hidden=mq;$('wmstd').hidden=mq;$('wmmq').hidden=!mq;$('tn').textContent=mq?'Plain':(jn||v('tpl')==='jnos'||v('tpl')==='jjm')?'Non-contrast':'Non-enhanced';
@@ -530,16 +723,21 @@ function refresh(){
 }
 $('f').addEventListener('input',refresh);
 $('f').addEventListener('change',refresh);
+$('fa').addEventListener('input',refresh);
+$('fa').addEventListener('change',refresh);
 $('sitx').addEventListener('change',e=>{const m=e.target.id.match(/^s_(\w+)_(l|r|b)$/);if(!m)return;const s=m[1];
   if(m[2]==='b')$('s_'+s+'_l').checked=$('s_'+s+'_r').checked=e.target.checked;
   else $('s_'+s+'_b').checked=$('s_'+s+'_l').checked&&$('s_'+s+'_r').checked});
 $('lock').addEventListener('change',refresh);
-$('tpls').innerHTML=[...$('tpl').options].map(o=>`<button type="button" data-v="${o.value}" aria-pressed="false">${o.textContent}</button>`).join('');
-$('tpls').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('tpl').value=b.dataset.v;refresh()});
-$('cranbtn').addEventListener('click',()=>{const open=$('tpls').hidden;$('tpls').hidden=!open;$('cranbtn').setAttribute('aria-expanded',open)});
+const tbtn=o=>`<button type="button" data-v="${o.value}" aria-pressed="false">${o.textContent}</button>`;
+$('tpls').innerHTML=[...$('tpl').options].filter(o=>!o.dataset.g).map(tbtn).join('');
+$('atpls').innerHTML=[...$('tpl').options].filter(o=>o.dataset.g==='abd').map(tbtn).join('');
+[$('tpls'),$('atpls')].forEach(el=>el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$('tpl').value=b.dataset.v;refresh()}));
+[['cranbtn','tpls'],['abdbtn','atpls']].forEach(([b,t])=>$(b).addEventListener('click',()=>{const open=$(t).hidden;$(t).hidden=!open;$(b).setAttribute('aria-expanded',open)}));
 $('ivhx').addEventListener('change',e=>{const t=e.target.id;if(t==='iv_b')$('iv_l').checked=$('iv_r').checked=e.target.checked;else if(t==='iv_l'||t==='iv_r')$('iv_b').checked=$('iv_l').checked&&$('iv_r').checked});
 $('copy').addEventListener('click',()=>{
-  if(!v('clin')){$('clin').focus();$('msg').textContent='Clinical data is required before copying.';return}
+  const cid=v('tpl')==='abd'?'aclin':'clin';
+  if(!v(cid)){$(cid).focus();$('msg').textContent='Clinical data is required before copying.';return}
   const d=document.createElement('div');d.contentEditable='true';d.style.cssText='position:fixed;left:-9999px;top:0;font-family:Arial,sans-serif;font-size:12pt';d.innerHTML=toHtml($('rep').value);document.body.appendChild(d);const rg=document.createRange();rg.selectNodeContents(d);const sel=getSelection();sel.removeAllRanges();sel.addRange(rg);
   let ok=false;
   const onCopy=e=>{e.clipboardData.setData('text/html',toHtml($('rep').value));e.clipboardData.setData('text/plain',$('rep').value);e.preventDefault()};
@@ -548,7 +746,7 @@ $('copy').addEventListener('click',()=>{
   document.removeEventListener('copy',onCopy);sel.removeAllRanges();d.remove();
   $('msg').textContent=ok?'Copied with bold headings.':'Copy blocked here. Select the text and copy it manually.';
 });
-$('reset').addEventListener('click',()=>{const keep=$('tpl').value;$('f').reset();$('tpl').value=keep;midWas=true;$('lock').checked=false;refresh();$('msg').textContent='Form cleared.'});
+$('reset').addEventListener('click',()=>{const keep=$('tpl').value;$('f').reset();$('fa').reset();$('tpl').value=keep;midWas=true;$('lock').checked=false;refresh();$('msg').textContent='Form cleared.'});
 refresh();
 </script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"6e0a66e7abc64f769274ed37a5f37c8b","r":1,"spa":2}' crossorigin="anonymous"></script>
